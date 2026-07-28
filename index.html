@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فكّ توقيت لينكد إن</title>
+<style>
+  :root{
+    --ink:#14171c;
+    --panel:#1c2029;
+    --panel-2:#242938;
+    --hairline:#333a4a;
+    --text:#eef0f3;
+    --text-dim:#9aa2b1;
+    --gold:#d4a054;
+    --gold-soft:rgba(212,160,84,.14);
+    --teal:#3fa88a;
+    --danger:#e07856;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--ink);color:var(--text);
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;min-height:100vh;}
+  body{padding:40px 20px 80px;}
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:28px;}
+  .clock-mark{width:64px;height:64px;margin:0 auto 12px;}
+  .clock-mark svg{width:100%;height:100%;}
+  .tick{stroke:var(--gold);stroke-width:2.2;}
+  .hand{stroke:var(--gold);stroke-width:2.6;stroke-linecap:round;
+    transform-origin:32px 32px;animation:spin 8s linear infinite;}
+  .hand.short{animation-duration:24s;stroke-width:3;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  h1{font-size:22px;margin:0 0 6px;}
+  header p{margin:0;color:var(--text-dim);font-size:13.5px;line-height:1.7;}
+
+  .card{background:var(--panel);border:1px solid var(--hairline);border-radius:12px;
+    padding:24px;margin-bottom:18px;}
+
+  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:8px;}
+  input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--hairline);
+    border-radius:8px;color:var(--text);font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size:13px;padding:12px 14px;direction:ltr;text-align:left;}
+  input[type=text]:focus{outline:none;border-color:var(--gold);}
+
+  .tz-row{display:flex;align-items:center;gap:10px;margin-top:14px;}
+  .tz-row label{margin:0;white-space:nowrap;}
+  select{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;}
+
+  .btn{background:var(--gold);color:#1a1305;border:none;border-radius:8px;padding:11px 22px;
+    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;width:100%;}
+  .btn:hover{filter:brightness(1.08);}
+
+  .msg{font-size:13px;margin-top:12px;padding:9px 12px;border-radius:7px;display:none;}
+  .msg.err{display:block;background:rgba(224,120,86,.12);color:var(--danger);border:1px solid rgba(224,120,86,.3);}
+
+  .result{display:none;margin-top:20px;}
+  .result.show{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .result-item{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;padding:14px 16px;}
+  .result-item .lbl{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .result-item .val{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:17px;color:var(--gold);}
+  .result-item.wide{grid-column:1 / -1;}
+  .urn-echo{font-size:11.5px;color:var(--text-dim);margin-top:14px;direction:ltr;text-align:left;word-break:break-all;}
+
+  .note{font-size:12px;color:var(--text-dim);line-height:1.8;margin-top:4px;}
+  footer{text-align:center;font-size:11.5px;color:var(--text-dim);margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="clock-mark">
+      <svg viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="29" fill="none" stroke="#333a4a" stroke-width="2"/>
+        <line class="tick" x1="32" y1="6" x2="32" y2="11"/>
+        <line class="tick" x1="32" y1="53" x2="32" y2="58"/>
+        <line class="tick" x1="6" y1="32" x2="11" y2="32"/>
+        <line class="tick" x1="53" y1="32" x2="58" y2="32"/>
+        <line class="hand" x1="32" y1="32" x2="32" y2="14"/>
+        <line class="hand short" x1="32" y1="32" x2="20" y2="32"/>
+      </svg>
+    </div>
+    <h1>فكّ توقيت لينكد إن</h1>
+    <p>الصق رابط أي منشور على لينكد إن، واحصل على تاريخه ووقته الدقيقين — بدون تسجيل دخول، وبدون أي اتصال بلينكد إن. كل الحساب يتم داخل متصفحك مباشرة.</p>
+  </header>
+
+  <div class="card">
+    <label for="urlInput">رابط المنشور</label>
+    <input type="text" id="urlInput" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:.../">
+
+    <div class="tz-row">
+      <label for="tzSelect">المنطقة الزمنية:</label>
+      <select id="tzSelect">
+        <option value="3" selected>الرياض / بيروت (+3 GMT)</option>
+        <option value="0">غرينتش (UTC+0)</option>
+        <option value="1">وسط أوروبا (+1 GMT)</option>
+        <option value="2">القاهرة / عمّان (+2 GMT)</option>
+        <option value="4">دبي / أبوظبي (+4 GMT)</option>
+        <option value="-5">نيويورك (-5 GMT)</option>
+        <option value="-8">لوس أنجلوس (-8 GMT)</option>
+      </select>
+    </div>
+
+    <button class="btn" id="decodeBtn">فكّ التوقيت</button>
+    <div class="msg" id="errMsg"></div>
+
+    <div class="result" id="resultBox">
+      <div class="result-grid">
+        <div class="result-item"><div class="lbl">التاريخ</div><div class="val" id="rDate">—</div></div>
+        <div class="result-item"><div class="lbl">اليوم</div><div class="val" id="rDay">—</div></div>
+        <div class="result-item"><div class="lbl">الوقت</div><div class="val" id="rTime">—</div></div>
+        <div class="result-item"><div class="lbl">بالعامية</div><div class="val" id="rHour">—</div></div>
+        <div class="result-item wide"><div class="lbl">منذ النشر</div><div class="val" id="rAgo">—</div></div>
+      </div>
+      <div class="urn-echo" id="urnEcho"></div>
+    </div>
+  </div>
+
+  <p class="note">
+    ⚠️ هذه الطريقة مبنية على ملاحظة عملية لتنسيق معرّفات لينكد إن (Snowflake ID)، وليست موثّقة رسميًا من الشركة — قد تتغير دقتها إذا غيّر لينكد إن آلية توليد المعرّفات مستقبلاً.
+  </p>
+  <footer>يعمل بالكامل داخل متصفحك — لا يُرسل أي رابط أو بيانات لأي خادم.</footer>
+</div>
+
+<script>
+function extractActivityId(input){
+  const trimmed = input.trim();
+  // direct numeric ID pasted
+  if(/^\d{15,20}$/.test(trimmed)) return trimmed;
+  const m = trimmed.match(/activity[:\-](\d{15,20})/);
+  return m ? m[1] : null;
+}
+
+function decode(urnStr, tzOffsetHours){
+  const u = BigInt(urnStr);
+  const ms = u >> 22n;
+  const localMs = Number(ms) + tzOffsetHours * 60 * 60 * 1000;
+  const d = new Date(localMs);
+  const y = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth()+1).padStart(2,'0');
+  const da = String(d.getUTCDate()).padStart(2,'0');
+  const hh = d.getUTCHours();
+  const mm = String(d.getUTCMinutes()).padStart(2,'0');
+  const daysAr = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const dow = daysAr[d.getUTCDay()];
+  let hour12 = hh % 12; if(hour12 === 0) hour12 = 12;
+  const period = hh < 12 ? 'صباحًا' : 'مساءً';
+  return {
+    date: `${y}-${mo}-${da}`,
+    day_of_week: dow,
+    time: `${String(hh).padStart(2,'0')}:${mm}`,
+    hour_label: `${hour12} ${period}`,
+    epochMs: Number(ms)
+  };
+}
+
+function timeAgo(publishEpochMs){
+  const diffMs = Date.now() - publishEpochMs;
+  const days = Math.floor(diffMs / 86400000);
+  if(days < 1) return 'اليوم';
+  if(days < 30) return `منذ ${days} يوم`;
+  const months = Math.floor(days/30);
+  if(months < 12) return `منذ ${months} شهر`;
+  const years = Math.floor(months/12);
+  return `منذ ${years} سنة${months%12 ? ' و' + (months%12) + ' شهر' : ''}`;
+}
+
+document.getElementById('decodeBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('urlInput').value;
+  const errMsg = document.getElementById('errMsg');
+  const resultBox = document.getElementById('resultBox');
+  errMsg.className = 'msg';
+  resultBox.classList.remove('show');
+
+  const id = extractActivityId(raw);
+  if(!id){
+    errMsg.textContent = 'تعذّر إيجاد معرّف منشور صالح داخل هذا الرابط. تأكد أنه رابط منشور لينكد إن كامل.';
+    errMsg.classList.add('err');
+    return;
+  }
+
+  const tz = parseFloat(document.getElementById('tzSelect').value);
+  let decoded;
+  try{
+    decoded = decode(id, tz);
+  }catch(e){
+    errMsg.textContent = 'حدث خطأ أثناء فك التوقيت. تأكد من صحة الرابط.';
+    errMsg.classList.add('err');
+    return;
+  }
+
+  document.getElementById('rDate').textContent = decoded.date;
+  document.getElementById('rDay').textContent = decoded.day_of_week;
+  document.getElementById('rTime').textContent = decoded.time;
+  document.getElementById('rHour').textContent = decoded.hour_label;
+  document.getElementById('rAgo').textContent = timeAgo(decoded.epochMs);
+  document.getElementById('urnEcho').textContent = `activity ID: ${id}`;
+  resultBox.classList.add('show');
+});
+
+document.getElementById('urlInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('decodeBtn').click();
+});
+</script>
+</body>
+</html>
