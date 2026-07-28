@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>فكّ توقيت لينكد إن</title>
+<title>إعرف وقت النشر في لينكد إن</title>
 <style>
   :root{
     --bg:#f3f2ef;
@@ -185,13 +185,13 @@
     <div class="logo-row">
       <div class="logo-chip">in</div>
     </div>
-    <h1>فكّ توقيت <span>لينكد إن</span></h1>
-    <p>لينكد إن ما بيوريك متى نُشر المنشور بالضبط — بس فيه طريقة تفكّها. الصق أي رابط منشور، وشوف اللحظة الحقيقية.</p>
+    <h1>إعرف وقت النشر <span>في لينكد إن</span></h1>
+    <p>لينكد إن ما بيوريك متى نُشر المنشور بالضبط — بس فيه طريقة نعرفها. الصق أي رابط منشور، وشوف اللحظة الحقيقية.</p>
     <div class="trust-badge" id="trustBadge"></div>
   </header>
 
   <div class="card">
-    <h2>فكّ منشور</h2>
+    <h2>اعرف وقت منشور</h2>
     <label for="urlInput">رابط المنشور</label>
     <input type="text" id="urlInput" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:.../">
 
@@ -209,7 +209,7 @@
       <span class="tz-auto" id="tzAuto"></span>
     </div>
 
-    <button class="btn" id="decodeBtn">فكّ التوقيت</button>
+    <button class="btn" id="decodeBtn">اعرف الوقت</button>
     <div class="scramble" id="scrambleLine"></div>
     <div class="msg" id="errMsg"></div>
 
@@ -237,7 +237,7 @@
       </div>
 
       <details>
-        <summary>تفاصيل تقنية — كيف انفكّ الرقم؟</summary>
+        <summary>تفاصيل تقنية — كيف عرفنا الوقت من الرقم؟</summary>
         <div class="tech-steps" id="techSteps"></div>
       </details>
     </div>
@@ -263,7 +263,7 @@
   </div>
 
   <div class="card" id="historyCard" style="display:none;">
-    <h2>آخر ما فكّيته</h2>
+    <h2>آخر ما عرفته</h2>
     <div class="history-list" id="historyList"></div>
   </div>
 
@@ -706,7 +706,7 @@ function runDecode(){
   let decoded;
   try{ decoded = decode(id, tz); }
   catch(e){
-    errMsg.textContent = 'حدث خطأ أثناء فك التوقيت. تأكد من صحة الرابط.';
+    errMsg.textContent = 'حدث خطأ أثناء معرفة التوقيت. تأكد من صحة الرابط.';
     errMsg.classList.add('err');
     return;
   }
@@ -857,7 +857,7 @@ document.getElementById('exportImgBtn').addEventListener('click', ()=>{
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = blue;
   ctx.font = "700 15px 'Segoe UI', Tahoma, Arial, sans-serif";
-  ctx.fillText('in — فكّ توقيت لينكد إن', W - PAD, PAD + 8);
+  ctx.fillText('in — إعرف وقت النشر في لينكد إن', W - PAD, PAD + 8);
 
   function drawCell(x, y, w, h, lbl, val){
     ctx.fillStyle = panelBg;
