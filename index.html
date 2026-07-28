@@ -331,20 +331,29 @@ function extractActivityId(input){
   // posts/username_slug-share-1234...-XXXX (share link format)
   m = trimmed.match(/share[:\-](\d{15,20})/);
   if(m) return m[1];
+  // posts/username_slug-ugcPost-1234...-XXXX (another LinkedIn share-link variant)
+  m = trimmed.match(/ugcPost[:\-](\d{15,20})/);
+  if(m) return m[1];
   // last resort: any standalone 15-20 digit run in the URL
   m = trimmed.match(/(\d{15,20})/);
   return m ? m[1] : null;
 }
 
-/* share-link URLs (linkedin.com/posts/username_word-word-share-ID-XXXX) encode
-   the author's vanity username and, usually, the post's hashtags/keywords right
-   in the slug. Pure string parsing of the pasted URL — no request to LinkedIn. */
+/* share-link URLs (linkedin.com/posts/username_word-word-share-ID-XXXX, or the
+   -ugcPost- variant) encode the author's vanity username and, usually, the
+   post's hashtags/keywords right in the slug — including non-Latin hashtags,
+   which LinkedIn percent-encodes (e.g. Arabic). Pure string parsing of the
+   pasted URL — no request to LinkedIn. */
 function extractExtraInfo(input){
-  const m = input.match(/linkedin\.com\/posts\/([a-z0-9\-]+)_([a-z0-9\-]+)-share-\d/i);
+  const m = input.match(/linkedin\.com\/posts\/([^_\/]+)_(.+?)-(?:share|ugcPost)-(\d{15,20})/i);
   if(!m) return null;
+  let rawKeywords = m[2];
+  let decoded;
+  try{ decoded = decodeURIComponent(rawKeywords); }
+  catch(e){ decoded = rawKeywords; } // malformed encoding — fall back to raw text
   return {
     username: m[1],
-    keywords: m[2].split('-').map(k=>k.trim()).filter(Boolean)
+    keywords: decoded.split('-').map(k=>k.trim()).filter(Boolean)
   };
 }
 
@@ -483,34 +492,70 @@ const WEEKEND_PHRASES = [
 ];
 
 const SEASON_PHRASES = {
-  spring: [
-    '🌸 المنشور انكتب والدنيا ربيع والجو بديع',
-    '🌷 توقيت زاهي وأيام الربيع بابها',
-    '🌿 الأرض لسا خضرا والمنشور طالع بريحة الربيع',
-    '🦋 نُشر بموسم الفراشات والهوا اللطيف',
-    '🌼 وقت الزهور والهوا العليل، مناسب لأي فكرة جديدة'
-  ],
-  summer: [
-    '☀️ نُشر والشمس بأوجها والصيف على قده',
-    '🍉 موسم البطيخ والسهرات الطويلة',
-    '🌊 توقيت صيفي، يريح إلا من الحر',
-    '🕶️ نُشر بموسم النظارات الشمسية والمكيفات',
-    '🌴 أيام الصيف الطويلة، والأفكار أطول منها أحيانًا'
-  ],
-  autumn: [
-    '🍂 المنشور انكتب والدنيا خريف وورق الشجر بيطير خفيف',
-    '🍁 موسم تساقط الأوراق، والأفكار كمان بتتساقط',
-    '🌬️ هوا الخريف بارد لطيف، مناسب جدًا للتأمل',
-    '☕ موسم القهوة الدافية والسماء الملبدة',
-    '🍃 نُشر بموسم التغيير، وربيع الشتا قريب'
-  ],
-  winter: [
-    '❄️ المنشور انكتب والدنيا شتا، والبرد قاسي مو مزح',
-    '🧣 موسم الطرحة والشال وفناجين الشاي',
-    '🔥 توقيت شتوي، الدفا بالبيت أحسن من برا',
-    '☔ نُشر وسط المطر، جو مناسب جدًا للأفكار الهادية',
-    '🫖 موسم السهرات الدافية جوا البيت بعيد عن البرد'
-  ]
+  spring: {
+    day: [
+      '🌸 المنشور انكتب والدنيا ربيع والجو بديع',
+      '🌷 توقيت زاهي وأيام الربيع بابها',
+      '🌿 الأرض لسا خضرا والهوا لطيف زي ما بيحب الربيع يكون',
+      '🦋 نُشر بنهار ربيعي يشجع على أي فكرة جديدة',
+      '🌼 وقت الزهور والهوا العليل، مناسب لأي بداية'
+    ],
+    night: [
+      '🌙 ليلة ربيعية هادية، والهوا لسا لطيف حتى بعد ما غابت الشمس',
+      '🌷 سهرة ربيعية مناسبة لأفكار هادية وطازجة',
+      '🌌 ليل الربيع خفيف على القلب، مثالي لمنشور بسيط وصافي',
+      '🍃 نُشر بليلة ربيعية معتدلة، بعيدة عن حر الصيف وبرد الشتا',
+      '🦋 حتى الليل بالربيع فيه نفس خفّة النهار'
+    ]
+  },
+  summer: {
+    day: [
+      '☀️ نُشر والشمس بأوجها والصيف على قده',
+      '🍉 موسم البطيخ وحرارة الصيف بكامل قوتها',
+      '🌊 توقيت صيفي، يريح إلا من الحر',
+      '🕶️ نُشر بموسم النظارات الشمسية والمكيفات',
+      '🌴 نهار صيفي طويل وحر متله بالضبط'
+    ],
+    night: [
+      '🌙 نُشر بسهرة صيفية، لما الجو أخيرًا صار محتمل بعد حر النهار',
+      '🍉 من سهرات الصيف الطويلة اللي ما إلها آخر',
+      '🌊 هوا الليل الصيفي أرحم بكثير من نهاره',
+      '🌴 موسم السهرات الصيفية الطويلة، والأفكار كمان بتطول',
+      '🌟 ليلة صيفية دافية، مناسبة جدًا للسهر والتفكير'
+    ]
+  },
+  autumn: {
+    day: [
+      '🍂 المنشور انكتب والدنيا خريف وورق الشجر بيطير خفيف',
+      '🍁 موسم تساقط الأوراق بوضح النهار',
+      '🌬️ هوا الخريف بارد لطيف بالنهار، مناسب جدًا للتأمل',
+      '☕ نهار خريفي غايم، مناسب لقهوة وفكرة',
+      '🍃 نُشر بموسم التغيير، وربيع الشتا قريب'
+    ],
+    night: [
+      '🌙 ليلة خريفية هادية، وهوا بارد لطيف يناسب مزاج المنشور',
+      '🍁 سهرة خريفية، وورق الشجر واقع برا وهو قاعد يكتب',
+      '☕ ليل الخريف مثالي لفنجان دافي وفكرة هادية',
+      '🌬️ هوا الليل بالخريف يخلي التفكير أوضح',
+      '🕯️ من سهرات الخريف الهادية قبل ما البرد يشتد'
+    ]
+  },
+  winter: {
+    day: [
+      '❄️ المنشور انكتب والدنيا شتا، والبرد قاسي مو مزح',
+      '🧣 موسم الطرحة والشال بوضح النهار',
+      '☔ نُشر وسط مطر نهاري، جو مناسب جدًا للأفكار الهادية',
+      '🔥 نهار شتوي بارد، والدفا بالبيت أحسن من برا',
+      '🫖 موسم الشتا وفناجين الشاي الدافية'
+    ],
+    night: [
+      '🌙 ليلة شتوية باردة، والدفا جوا البيت أحلى بكثير من بره',
+      '🧣 سهرة شتوية تحت بطانية دافية وفكرة بالراس',
+      '🔥 من ليالي الشتا اللي بتخلي القعدة جوا أحلى قرار',
+      '☕ ليل بارد وفنجان دافي، توليفة مثالية للكتابة',
+      '🫖 موسم السهرات الدافية بعيد عن برد الليل'
+    ]
+  }
 };
 
 /* soft/pastel colors — kept light and low-saturation for both themes so nothing reads as harsh */
@@ -656,8 +701,9 @@ function runDecode(){
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const themeKey = isDark ? 'dark' : 'light';
     const isWeekend = (decoded.day_of_week === 'الجمعة' || decoded.day_of_week === 'السبت');
-    const periodKey = isWeekend ? 'weekend' : periodKeyFor(decoded.rawHour);
+    const periodKey = periodKeyFor(decoded.rawHour); // always the real hour — weekend affects only the badge phrase below
     const seasonKey = seasonKeyFor(decoded.month);
+    const isNight = (decoded.rawHour >= 18 || decoded.rawHour < 6);
     lastPeriodKey = periodKey; lastSeasonKey = seasonKey;
 
     document.getElementById('flavorBadge').textContent =
@@ -667,7 +713,7 @@ function runDecode(){
     document.getElementById('rDay').textContent = decoded.day_of_week;
     document.getElementById('rTime').textContent = decoded.time;
     document.getElementById('rHour').textContent = `${PERIOD_EMOJI[periodKey]} ${decoded.hour_label}`;
-    document.getElementById('seasonLine').textContent = pick(SEASON_PHRASES[seasonKey]);
+    document.getElementById('seasonLine').textContent = pick(SEASON_PHRASES[seasonKey][isNight ? 'night' : 'day']);
 
     applyBoxColor(document.getElementById('dateBox'), SEASON_COLORS[seasonKey][themeKey]);
     applyBoxColor(document.getElementById('timeBox'), PERIOD_COLORS[periodKey][themeKey]);
