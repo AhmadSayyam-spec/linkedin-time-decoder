@@ -261,6 +261,7 @@ document.querySelectorAll('.theme-btn').forEach(btn=>{
 (function initTheme(){
   const saved = localStorage.getItem('lidecoder_theme') || 'auto';
   applyTheme(saved);
+  // re-evaluate every 5 minutes so "auto" flips naturally if the page stays open across dawn/dusk
   setInterval(()=>{
     if((localStorage.getItem('lidecoder_theme')||'auto') === 'auto') applyTheme('auto');
   }, 5*60*1000);
@@ -270,7 +271,14 @@ document.querySelectorAll('.theme-btn').forEach(btn=>{
 function extractActivityId(input){
   const trimmed = input.trim();
   if(/^\d{15,20}$/.test(trimmed)) return trimmed;
-  const m = trimmed.match(/activity[:\-](\d{15,20})/);
+  // feed/update/urn:li:activity:1234...
+  let m = trimmed.match(/activity[:\-](\d{15,20})/);
+  if(m) return m[1];
+  // posts/username_slug-share-1234...-XXXX (share link format)
+  m = trimmed.match(/share[:\-](\d{15,20})/);
+  if(m) return m[1];
+  // last resort: any standalone 15-20 digit run in the URL
+  m = trimmed.match(/(\d{15,20})/);
   return m ? m[1] : null;
 }
 
@@ -433,7 +441,11 @@ document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
   });
 });
 
-/* ---------- export result as image ---------- */
+/* ---------- export result as image ----------
+   Drawn directly with Canvas 2D fillText (ctx.direction='rtl') instead of any
+   HTML/SVG intermediary. Native fillText uses the browser's real text-shaping
+   engine, so Arabic letter-joining renders correctly — this sidesteps both the
+   html2canvas glyph-by-glyph bug and any foreignObject rasterization quirks. */
 function roundRectPath(ctx,x,y,w,h,r){
   ctx.beginPath();
   ctx.moveTo(x+r,y);
@@ -466,7 +478,7 @@ document.getElementById('exportImgBtn').addEventListener('click', ()=>{
   const H = HEADER_H + CELL_H*2 + GAP*2 + WIDE_H + PAD;
 
   const canvas = document.createElement('canvas');
-  const scale = 2;
+  const scale = 2; // render at 2x for a crisp download
   canvas.width = W*scale; canvas.height = H*scale;
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
   const ctx = canvas.getContext('2d');
