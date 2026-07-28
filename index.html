@@ -49,6 +49,11 @@
   .theme-btn.active{background:var(--blue-soft);color:var(--blue-dark);border-color:var(--blue);
     font-weight:700;}
 
+.trust-badge{display:none;text-align:center;background:var(--blue-soft);color:var(--blue-dark);
+    font-size:14.5px;font-weight:700;padding:9px 20px;border-radius:24px;margin:16px auto 0;
+    width:fit-content;animation:fade .4s ease;}
+  .trust-badge .count{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;}
+
   header{text-align:center;margin:6px 0 24px;}
   .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;}
   .logo-chip{width:38px;height:38px;background:var(--blue);border-radius:6px;color:#fff;
@@ -159,6 +164,7 @@
     </div>
     <h1>فكّ توقيت <span>لينكد إن</span></h1>
     <p>لينكد إن ما بيوريك متى نُشر المنشور بالضبط — بس فيه طريقة تفكّها. الصق أي رابط منشور، وشوف اللحظة الحقيقية.</p>
+    <div class="trust-badge" id="trustBadge"></div>
   </header>
 
   <div class="card">
@@ -234,7 +240,6 @@
   </p>
   <div class="disclaimer">
     أداة مستقلة غير رسمية وغير تابعة لشركة LinkedIn أو مرتبطة بها بأي شكل. يعمل بالكامل داخل متصفحك — لا يُرسل أي رابط أو محتوى منشور لأي خادم.
-    <span id="visitCount"></span>
   </div>
 </div>
 
@@ -577,12 +582,15 @@ renderHistory();
    Replace YOUR-NAMESPACE below with a unique name you choose (free, no signup needed)
    via https://counterapi.dev — this just tracks a total count, no personal data. */
 (function(){
-  fetch('https://api.counterapi.dev/v1/ahmad-li-decoder-2026/li-time-decoder/up')
+  fetch('https://api.counterapi.dev/v1/YOUR-NAMESPACE/li-time-decoder/up')
     .then(r=>r.json())
     .then(data=>{
-      document.getElementById('visitCount').textContent = ' · تم استخدامها ' + (data.count||'?') + ' مرة';
+      const count = data.count ? Number(data.count).toLocaleString('en-US') : '?';
+      const badge = document.getElementById('trustBadge');
+      badge.innerHTML = `✅ تم استخدام هذا الموقع بثقة <span class="count">${count}</span> مرة`;
+      badge.style.display = 'inline-block';
     })
-    .catch(()=>{ /* silently ignore if counter service unreachable */ });
+    .catch(()=>{ /* silently ignore if counter service unreachable — badge stays hidden */ });
 })();
 
 /* ---------- optional email capture ----------
