@@ -65,6 +65,17 @@
   header p{margin:0;color:var(--text-dim);font-size:13.5px;line-height:1.8;max-width:480px;
     margin:0 auto;}
 
+  .embed-card{display:none;}
+  .embed-card.show{display:block;animation:fade .35s ease;}
+  .embed-wrap{display:flex;justify-content:center;background:var(--panel-2);border-radius:12px;
+    padding:20px;border:1px solid var(--hairline);}
+  .embed-wrap iframe{width:100%;max-width:504px;border:none;border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  html[data-theme="dark"] .embed-wrap iframe{box-shadow:0 2px 14px rgba(0,0,0,.35);}
+  .embed-fallback{text-align:center;font-size:12.5px;color:var(--text-dim);margin-top:12px;line-height:1.8;}
+  .embed-fallback a{color:var(--blue);font-weight:700;text-decoration:none;}
+  .embed-fallback a:hover{text-decoration:underline;}
+
   .card{background:var(--panel);border:1px solid var(--hairline);border-radius:12px;
     padding:26px;margin-bottom:18px;box-shadow:var(--shadow);}
   .card h2{font-size:16px;margin:0 0 14px;font-weight:700;}
@@ -107,6 +118,16 @@
   .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .result-item{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;padding:14px 16px;
     transition:background .3s ease, color .3s ease;}
+  .profile-link-btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel);
+    border:1.5px solid var(--blue);color:var(--blue);text-decoration:none;font-weight:700;
+    font-size:13px;padding:9px 16px;border-radius:24px;margin-top:4px;transition:.15s;}
+  .profile-link-btn:hover{background:var(--blue-soft);}
+  .profile-link-btn .plb-icon{width:22px;height:22px;border-radius:5px;background:var(--blue);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
+    font-family:Georgia,serif;flex:none;}
+  html[data-theme="dark"] .profile-link-btn .plb-icon{color:#0b1520;}
+  .plb-arrow{font-size:13px;}
+
   .season-line{font-size:11.5px;color:var(--text-dim);margin-top:6px;line-height:1.6;font-weight:400;}
   .result-item .lbl{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
   .result-item .val{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:17px;color:var(--blue-dark);}
@@ -153,11 +174,7 @@
 </style>
 </head>
 <body>
-<title>Tessssssst</title>
-<iframe src="https://www.linkedin.com/in/abdulfattah-darabseh-8824476a/" title="test"></iframe>
-
-  
-  <div class="wrap">
+<div class="wrap">
   <div class="theme-switcher">
     <button class="theme-btn" data-theme-choice="light">☀️ فاتح</button>
     <button class="theme-btn" data-theme-choice="dark">🌙 غامق</button>
@@ -207,7 +224,11 @@
         <div class="result-item"><div class="lbl">اليوم</div><div class="val" id="rDay">—</div></div>
         <div class="result-item" id="timeBox"><div class="lbl">الوقت</div><div class="val" id="rTime">—</div></div>
         <div class="result-item" id="hourBox"><div class="lbl">بالعامية</div><div class="val" id="rHour">—</div></div>
-        <div class="result-item wide"><div class="lbl">عمر المنشور (حي)</div><div class="val live-age" id="rAgeLive">—</div></div>
+        <div class="result-item wide" id="rAgeBox"><div class="lbl">عمر المنشور (حي)</div><div class="val live-age" id="rAgeLive">—</div></div>
+        <div class="result-item wide" id="extraInfoBox" style="display:none;">
+          <div class="lbl">معلومات إضافية من الرابط نفسه</div>
+          <div id="extraInfoContent" style="margin-top:8px;font-size:13px;line-height:2;"></div>
+        </div>
       </div>
 
       <div class="result-actions">
@@ -227,6 +248,17 @@
       <input type="text" id="urlInput2" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:.../">
       <button class="btn" id="compareBtn">قارن</button>
       <div class="compare-result" id="compareResult" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card embed-card" id="embedCard">
+    <h2>معاينة المنشور 👀</h2>
+    <div class="embed-wrap">
+      <iframe id="embedFrame" src="" height="560" title="Embedded post" allowfullscreen></iframe>
+    </div>
+    <div class="embed-fallback">
+      إذا لم تظهر المعاينة، يكون صاحب المنشور عطّل خاصية التضمين —
+      <a id="embedFallbackLink" href="#" target="_blank" rel="noopener">افتح المنشور مباشرة على لينكد إن ↗</a>
     </div>
   </div>
 
@@ -302,6 +334,18 @@ function extractActivityId(input){
   // last resort: any standalone 15-20 digit run in the URL
   m = trimmed.match(/(\d{15,20})/);
   return m ? m[1] : null;
+}
+
+/* share-link URLs (linkedin.com/posts/username_word-word-share-ID-XXXX) encode
+   the author's vanity username and, usually, the post's hashtags/keywords right
+   in the slug. Pure string parsing of the pasted URL — no request to LinkedIn. */
+function extractExtraInfo(input){
+  const m = input.match(/linkedin\.com\/posts\/([a-z0-9\-]+)_([a-z0-9\-]+)-share-\d/i);
+  if(!m) return null;
+  return {
+    username: m[1],
+    keywords: m[2].split('-').map(k=>k.trim()).filter(Boolean)
+  };
 }
 
 function decode(urnStr, tzOffsetHours){
@@ -591,6 +635,7 @@ function runDecode(){
   const resultBox = document.getElementById('resultBox');
   errMsg.className = 'msg';
   resultBox.classList.remove('show');
+  document.getElementById('embedCard').classList.remove('show');
 
   const id = extractActivityId(raw);
   if(!id){
@@ -628,7 +673,38 @@ function runDecode(){
     applyBoxColor(document.getElementById('timeBox'), PERIOD_COLORS[periodKey][themeKey]);
     applyBoxColor(document.getElementById('hourBox'), PERIOD_COLORS[periodKey][themeKey]);
 
+    const extra = extractExtraInfo(raw);
+    const extraBox = document.getElementById('extraInfoBox');
+    if(extra){
+      const profileUrl = `https://www.linkedin.com/in/${extra.username}/`;
+      const chips = extra.keywords.map(k =>
+        `<span style="display:inline-block;background:${PERIOD_COLORS[periodKey][themeKey][0]};
+          color:${PERIOD_COLORS[periodKey][themeKey][1]};padding:3px 10px;border-radius:14px;
+          font-size:11.5px;margin-inline-end:6px;">#${k}</span>`
+      ).join('');
+      extraBox.querySelector('#extraInfoContent').innerHTML =
+        `<div style="margin-bottom:10px;">
+           <a href="${profileUrl}" target="_blank" rel="noopener" class="profile-link-btn" dir="ltr">
+             <span class="plb-icon">in</span>
+             <span dir="rtl">عرض بروفايل <b>${extra.username}</b> على لينكد إن</span>
+             <span class="plb-arrow">↗</span>
+           </a>
+         </div>` +
+        (extra.keywords.length
+          ? `🏷️ كلمات مفتاحية محتملة من الرابط (مو مؤكدة 100٪): ${chips}`
+          : '');
+      extraBox.style.display = 'block';
+    } else {
+      extraBox.style.display = 'none';
+    }
+
     startLiveAge(decoded.epochMs);
+
+    const embedUrl = `https://www.linkedin.com/embed/feed/update/urn:li:share:${id}`;
+    document.getElementById('embedFrame').src = embedUrl;
+    document.getElementById('embedFallbackLink').href = raw.trim().startsWith('http')
+      ? raw.trim() : `https://www.linkedin.com/feed/update/urn:li:activity:${id}/`;
+    document.getElementById('embedCard').classList.add('show');
 
     const u = BigInt(id);
     const ms = u >> 22n;
