@@ -105,7 +105,9 @@
     padding:5px 14px;border-radius:20px;font-size:12.5px;font-weight:700;margin-bottom:14px;}
 
   .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .result-item{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;padding:14px 16px;}
+  .result-item{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;padding:14px 16px;
+    transition:background .3s ease, color .3s ease;}
+  .season-line{font-size:11.5px;color:var(--text-dim);margin-top:6px;line-height:1.6;font-weight:400;}
   .result-item .lbl{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
   .result-item .val{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:17px;color:var(--blue-dark);}
   .result-item.wide{grid-column:1 / -1;}
@@ -193,10 +195,14 @@
     <div class="result" id="resultBox">
       <div class="flavor-badge" id="flavorBadge"></div>
       <div class="result-grid">
-        <div class="result-item"><div class="lbl">التاريخ</div><div class="val" id="rDate">—</div></div>
+        <div class="result-item" id="dateBox">
+          <div class="lbl">التاريخ</div>
+          <div class="val" id="rDate">—</div>
+          <div class="season-line" id="seasonLine"></div>
+        </div>
         <div class="result-item"><div class="lbl">اليوم</div><div class="val" id="rDay">—</div></div>
-        <div class="result-item"><div class="lbl">الوقت</div><div class="val" id="rTime">—</div></div>
-        <div class="result-item"><div class="lbl">بالعامية</div><div class="val" id="rHour">—</div></div>
+        <div class="result-item" id="timeBox"><div class="lbl">الوقت</div><div class="val" id="rTime">—</div></div>
+        <div class="result-item" id="hourBox"><div class="lbl">بالعامية</div><div class="val" id="rHour">—</div></div>
         <div class="result-item wide"><div class="lbl">عمر المنشور (حي)</div><div class="val live-age" id="rAgeLive">—</div></div>
       </div>
 
@@ -249,12 +255,19 @@ function effectiveThemeForAuto(){
   const hour = new Date().getHours();
   return (hour >= 6 && hour < 18) ? 'light' : 'dark';
 }
+let lastPeriodKey = null, lastSeasonKey = null;
 function applyTheme(choice){
   const actual = choice === 'auto' ? effectiveThemeForAuto() : choice;
   document.documentElement.setAttribute('data-theme', actual);
   document.querySelectorAll('.theme-btn').forEach(b=>{
     b.classList.toggle('active', b.dataset.themeChoice === choice);
   });
+  if(lastPeriodKey && lastSeasonKey){
+    const tk = actual === 'dark' ? 'dark' : 'light';
+    applyBoxColor(document.getElementById('dateBox'), SEASON_COLORS[lastSeasonKey][tk]);
+    applyBoxColor(document.getElementById('timeBox'), PERIOD_COLORS[lastPeriodKey][tk]);
+    applyBoxColor(document.getElementById('hourBox'), PERIOD_COLORS[lastPeriodKey][tk]);
+  }
 }
 function setThemeChoice(choice){
   localStorage.setItem('lidecoder_theme', choice);
@@ -305,16 +318,198 @@ function decode(urnStr, tzOffsetHours){
     date: `${y}-${mo}-${da}`, day_of_week: dow,
     time: `${String(hh).padStart(2,'0')}:${mm}`,
     hour_label: `${hour12} ${period}`,
-    epochMs: Number(ms), rawHour: hh
+    epochMs: Number(ms), rawHour: hh, month: d.getUTCMonth()+1
   };
 }
 
-function flavorFor(hh, dow){
-  if(hh >= 0 && hh < 5) return '🦉 نُشر في قلب الليل';
-  if(hh >= 5 && hh < 8) return '☀️ نُشر مع أول الفجر';
-  if(dow === 'الجمعة' || dow === 'السبت') return '🏖️ نُشر بعطلة نهاية الأسبوع';
-  if(hh >= 12 && hh < 14) return '🍽️ نُشر وقت الغداء';
-  return '📌 نُشر بوقت دوام عادي';
+/* ---------- fun personality phrases (randomized, avoid repetition fatigue) ---------- */
+const PERIOD_PHRASES = {
+  lateNight: [
+    '💡 صاحب المنشور من نوعية اللي بيجيه أحسن الأفكار الساعة ٣ الصبح',
+    '😴 يبدو إن النوم عنده اختياري مو إجباري',
+    '🌕 ساعة ما حدا صاحي غيره وغير القمر',
+    '🧠 عقله يشتغل أفضل لما العالم كله نايم',
+    '🔁 من فريق "بكرة بنعوض النوم" اللي ما بيصير',
+    '✨ واضح إنه بيؤمن إن الإلهام ما إله دوام رسمي',
+    '☕ الظاهر القهوة الأخيرة ضربت مفعولها الساعة هاي بالذات',
+    '🪐 شخص بيعيش على توقيت مختلف عن باقي الكوكب',
+    '⏳ من اللي بيقول "خمس دقايق وبنام" من الساعة ١٢',
+    '🌌 أفكاره الليلية أقوى من قراراته الصباحية غالبًا'
+  ],
+  dawn: [
+    '🏃 يبدو إنه رياضي ونشيط — أو ع الأقل حابب يوهمنا إنه صاحي كل يوم هالساعة',
+    '🕌 من فريق "الفجر يمين ما بفوّته"',
+    '🚀 شخص يؤمن إن النجاح يبدأ قبل ما تصحى أنت',
+    '🔋 طاقة الصباح الباكر عنده مو متل باقي البشر',
+    '📢 واضح إنه مبرمج على "استيقظ واغزُ يومك"',
+    '🛏️ من نوعية اللي يركض وأنت لسا بتتقلب بالسرير',
+    '📚 يبدو إنه قارئ كتب "خمس صباحات" وطبّقها فعليًا',
+    '😳 طاقة إيجابية بكير بشكل يخوّف شوي بصراحة',
+    '👋 أول واحد بمجموعة الواتساب يبعت "صباح الخير" كل يوم',
+    '⏰ شخص عنده علاقة صحية مع المنبه، بعكس أغلبنا'
+  ],
+  earlyMorning: [
+    '☕ من فريق "أول قهوة قبل أول اجتماع" — منظم من الصبح بدري',
+    '🏢 وصل المكتب قبل ما يوصل حتى الكاشير',
+    '⌚ شخص جدوله اليومي مضبوط متل ساعة سويسرية',
+    '📧 من نوعية اللي يخلص إيميلاته قبل ما يبدأ الدوام رسميًا',
+    '💪 طاقة "اليوم رح أنجز كل شي" ولسا الساعة مبكرة',
+    '🎒 واضح إنه حضّر شنطته وقهوته من الليلة اللي قبل',
+    '🥇 شخص يؤمن إن أول ساعتين بالدوام أهم شي باليوم',
+    '🚪 من فريق يوصل قبل الجميع ويطلع آخر واحد',
+    '⚡ طاقة الصبح عنده أعلى من طاقة أغلبنا بعد قهوتين',
+    '🎯 شخص جاهز لليوم قبل ما يجهز أغلب الناس لقهوتهم'
+  ],
+  morning: [
+    '💼 دوام رسمي وطاقة كاملة — واضح إنه إنسان منتج بالساعات الذهبية',
+    '🏁 من فريق "خلّص شغل الصبح قبل ما يبلش الزحمة"',
+    '🎯 شخص يستغل أعلى تركيز عنده باليوم صح',
+    '📌 واضح إنه بيؤمن بقاعدة "أهم مهمة أول شي بالصبح"',
+    '🗣️ طاقة اجتماعات وقرارات — الصباح وقته المفضل للإنتاجية',
+    '✅ من نوعية اللي يخلص نص مهامه قبل الغداء',
+    '🗂️ شخص منظم، يعرف يستثمر وقته الذهبي صح',
+    '🔥 طاقة "اليوم شغل جد" واضحة من توقيت النشر',
+    '🌟 من فريق الصباح المنتج، بعكس فريق "بعد الظهر بلاش"',
+    '🧭 شخص يعرف إن الصباح فرصة، مو مجرد وقت'
+  ],
+  lunch: [
+    '🍽️ نشر وهو مستني الأكل، أو لسا مكتفي — بيّاع طاقة إيجابية وقت الغداء',
+    '🥗 من فريق "فسحة الغداء أهم اجتماع باليوم"',
+    '⚖️ شخص يعرف يوازن بين الشغل والاستراحة صح',
+    '🛋️ واضح إنه ياخذ استراحته على قد حجمها',
+    '📈 طاقة "خلصت نص يومي والباقي أسهل" واضحة',
+    '😋 من نوعية اللي ياخذ فسحته الغداء بجدية تامة',
+    '🍲 شخص يؤمن إن الطعام قبل أي قرار مهم',
+    '🥄 وقت مثالي يفكّر بهدوء بين لقمة ولقمة',
+    '🍛 من فريق "لازم آكل منيح عشان أكمل يومي بقوة"',
+    '🕐 شخص عارف يقدّر وقت الاستراحة النص نهاري'
+  ],
+  afternoon: [
+    '😅 منطقة "صحصحة العصر" — يا نشر عشان يصحى، يا نشر عشان يأجل شغلة شوي',
+    '☕ من فريق "بدي قهوة تالتة عشان أكمل الدوام"',
+    '🔄 شخص بمنطقة "خلصنا نص اليوم وبعدنا مو خلصنا"',
+    '🥱 واضح إنه يحارب نعسة العصر بطريقته الخاصة',
+    '🧾 طاقة "خلصت أهم شي وباقي شغل روتيني" واضحة',
+    '🌬️ من نوعية اللي ينشر عشان ياخذ استراحة ذهنية قصيرة',
+    '⏳ شخص بمنطقة العد التنازلي لنهاية الدوام',
+    '🌤️ طاقة عصرية بين التركيز والتفكير بموعد الخروج',
+    '😩 من فريق "لسا الشمس طالعة بس أنا خلاص تعبت"',
+    '🔌 شخص يجدد نشاطه بفاصل صغير قبل آخر ساعتين دوام'
+  ],
+  evening: [
+    '🌆 خلص دوامه وفاضي شوي — وقت مثالي يفكّر ويكتب بهدوء',
+    '🌙 من فريق "أفكار المساء أهدى وأوضح من أفكار الصباح"',
+    '🧘 شخص يستغل وقت الفراغ بعد الدوام صح',
+    '📝 واضح إنه يحب يلخّص يومه بمنشور قبل ما يرتاح',
+    '🎉 طاقة "خلصت شغلي وهسا وقتي أنا" واضحة',
+    '🕯️ من نوعية اللي بيفكر أحسن بعد ما تهدى الدنيا شوي',
+    '🌇 شخص يستمتع بالمساء متل ما يستمتع بالصباح',
+    '👨‍👩‍👧 وقت العائلة والأفكار الهادية — توقيت متوازن',
+    '💭 من فريق "المساء وقتي المفضل للتأمل والكتابة"',
+    '🚪 شخص يعرف يفصل بين وقت الشغل ووقت نفسه'
+  ],
+  lateEvening: [
+    '🎭 صاحبنا شكله صاحب مزاج وسهير — الأفكار بتجيه أحلى لما الدنيا تهدى',
+    '🎨 من فريق "الإبداع الحقيقي يبدأ بعد ما الكل ينام"',
+    '🌃 شخص يعيش أحلى لحظاته بعد ما تصير الدنيا هادية',
+    '🌌 واضح إنه من عشاق السهرة والتفكير المتأخر',
+    '🌒 طاقة "النهار للشغل، الليل للإبداع" واضحة تمامًا',
+    '🧊 من نوعية اللي أفكاره تصفى بعد العاشرة بالضبط',
+    '🕯️ شخص عنده جلسة تفكير خاصة قبل النوم',
+    '🤫 طاقة سهرانة هادية بعيدة عن ضجة النهار',
+    '🖋️ من فريق "أحلى الأفكار ما إلها دوام محدد"',
+    '🌠 شخص يؤمن إن الليل وقته الشخصي بامتياز'
+  ]
+};
+const WEEKEND_PHRASES = [
+  '🏖️ نشر بعطلته؟! يبدو إن الشغل ما بياخذ منه إجازة',
+  '🧳 من فريق "حتى بعطلتي بفكر بالشغل شوي"',
+  '🤝 شخص شغله وحياته مو منفصلين تمامًا، وهذا نوعًا ما جميل',
+  '🚫🛋️ واضح إنه ما بيعرف يقعد بلا شغلة',
+  '🧠 طاقة "عطلة بس العقل شغّال" واضحة تمامًا',
+  '❤️ من نوعية اللي بيحب شغله لدرجة ينشر فيه وهو مرتاح',
+  '🍃 شخص يستغل هدوء العطلة ليكتب أفكار أوضح',
+  '⚖️ طاقة توازن (أو عدم توازن!) واضحة بين الشغل والراحة',
+  '🕰️ من فريق "الشغل الجيد ما إله وقت محدد"',
+  '🔥 شخص شغوف فعلاً، حتى بيوم راحته يفكر بمجاله'
+];
+
+const SEASON_PHRASES = {
+  spring: [
+    '🌸 المنشور انكتب والدنيا ربيع والجو بديع',
+    '🌷 توقيت زاهي وأيام الربيع بابها',
+    '🌿 الأرض لسا خضرا والمنشور طالع بريحة الربيع',
+    '🦋 نُشر بموسم الفراشات والهوا اللطيف',
+    '🌼 وقت الزهور والهوا العليل، مناسب لأي فكرة جديدة'
+  ],
+  summer: [
+    '☀️ نُشر والشمس بأوجها والصيف على قده',
+    '🍉 موسم البطيخ والسهرات الطويلة',
+    '🌊 توقيت صيفي، يريح إلا من الحر',
+    '🕶️ نُشر بموسم النظارات الشمسية والمكيفات',
+    '🌴 أيام الصيف الطويلة، والأفكار أطول منها أحيانًا'
+  ],
+  autumn: [
+    '🍂 المنشور انكتب والدنيا خريف وورق الشجر بيطير خفيف',
+    '🍁 موسم تساقط الأوراق، والأفكار كمان بتتساقط',
+    '🌬️ هوا الخريف بارد لطيف، مناسب جدًا للتأمل',
+    '☕ موسم القهوة الدافية والسماء الملبدة',
+    '🍃 نُشر بموسم التغيير، وربيع الشتا قريب'
+  ],
+  winter: [
+    '❄️ المنشور انكتب والدنيا شتا، والبرد قاسي مو مزح',
+    '🧣 موسم الطرحة والشال وفناجين الشاي',
+    '🔥 توقيت شتوي، الدفا بالبيت أحسن من برا',
+    '☔ نُشر وسط المطر، جو مناسب جدًا للأفكار الهادية',
+    '🫖 موسم السهرات الدافية جوا البيت بعيد عن البرد'
+  ]
+};
+
+/* soft/pastel colors — kept light and low-saturation for both themes so nothing reads as harsh */
+const PERIOD_COLORS = {
+  lateNight:   {light:['#ece9f7','#5b4b8a'], dark:['#2a2740','#c9bdfa']},
+  dawn:        {light:['#ffe9db','#b45b23'], dark:['#3a2a20','#ffb37a']},
+  earlyMorning:{light:['#fff3d6','#8a6d1f'], dark:['#3a3220','#ffd873']},
+  morning:     {light:['#e3f2fd','#1565c0'], dark:['#1f2f3d','#8ecbff']},
+  lunch:       {light:['#e6f7ec','#1e7a46'], dark:['#1f3a2a','#7fe0a8']},
+  afternoon:   {light:['#fff0e0','#9a5b12'], dark:['#3a2c1a','#ffbf72']},
+  evening:     {light:['#e8ecfb','#3949ab'], dark:['#232a45','#a7b3ff']},
+  lateEvening: {light:['#efe6f7','#6a3d99'], dark:['#2c223d','#cfa8f0']},
+  weekend:     {light:['#fdf0e3','#b06a1f'], dark:['#3a2f20','#ffcf8a']}
+};
+const SEASON_COLORS = {
+  spring: {light:['#eafaf0','#1f8a4c'], dark:['#1e3327','#7fe6a8']},
+  summer: {light:['#fff9e0','#a8790a'], dark:['#3a3218','#ffe07a']},
+  autumn: {light:['#fdf0e3','#b0561f'], dark:['#3a2618','#ffb37a']},
+  winter: {light:['#e8f1fb','#1a5a96'], dark:['#1c2c3d','#9dcdfa']}
+};
+const PERIOD_EMOJI = {
+  lateNight:'🌌', dawn:'🌅', earlyMorning:'☕', morning:'☀️', lunch:'🍽️',
+  afternoon:'🌤️', evening:'🌆', lateEvening:'🌙', weekend:'🏖️'
+};
+const SEASON_EMOJI = { spring:'🌸', summer:'☀️', autumn:'🍂', winter:'❄️' };
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function periodKeyFor(hh){
+  if(hh >= 0 && hh < 5) return 'lateNight';
+  if(hh >= 5 && hh < 7) return 'dawn';
+  if(hh >= 7 && hh < 9) return 'earlyMorning';
+  if(hh >= 9 && hh < 12) return 'morning';
+  if(hh >= 12 && hh < 14) return 'lunch';
+  if(hh >= 14 && hh < 18) return 'afternoon';
+  if(hh >= 18 && hh < 22) return 'evening';
+  return 'lateEvening'; // 22-23
+}
+function seasonKeyFor(month){
+  if(month >= 3 && month <= 5) return 'spring';
+  if(month >= 6 && month <= 8) return 'summer';
+  if(month >= 9 && month <= 11) return 'autumn';
+  return 'winter'; // 12,1,2
+}
+function applyBoxColor(el, colorPair){
+  el.style.background = colorPair[0];
+  el.style.color = colorPair[1];
 }
 
 let liveTimer = null;
@@ -409,11 +604,26 @@ function runDecode(){
   }
 
   scrambleThenReveal(decoded.date, ()=>{
-    document.getElementById('flavorBadge').textContent = flavorFor(decoded.rawHour, decoded.day_of_week);
-    document.getElementById('rDate').textContent = decoded.date;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const themeKey = isDark ? 'dark' : 'light';
+    const isWeekend = (decoded.day_of_week === 'الجمعة' || decoded.day_of_week === 'السبت');
+    const periodKey = isWeekend ? 'weekend' : periodKeyFor(decoded.rawHour);
+    const seasonKey = seasonKeyFor(decoded.month);
+    lastPeriodKey = periodKey; lastSeasonKey = seasonKey;
+
+    document.getElementById('flavorBadge').textContent =
+      isWeekend ? pick(WEEKEND_PHRASES) : pick(PERIOD_PHRASES[periodKey]);
+
+    document.getElementById('rDate').textContent = `${SEASON_EMOJI[seasonKey]} ${decoded.date}`;
     document.getElementById('rDay').textContent = decoded.day_of_week;
     document.getElementById('rTime').textContent = decoded.time;
-    document.getElementById('rHour').textContent = decoded.hour_label;
+    document.getElementById('rHour').textContent = `${PERIOD_EMOJI[periodKey]} ${decoded.hour_label}`;
+    document.getElementById('seasonLine').textContent = pick(SEASON_PHRASES[seasonKey]);
+
+    applyBoxColor(document.getElementById('dateBox'), SEASON_COLORS[seasonKey][themeKey]);
+    applyBoxColor(document.getElementById('timeBox'), PERIOD_COLORS[periodKey][themeKey]);
+    applyBoxColor(document.getElementById('hourBox'), PERIOD_COLORS[periodKey][themeKey]);
+
     startLiveAge(decoded.epochMs);
 
     const u = BigInt(id);
