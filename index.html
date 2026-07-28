@@ -322,6 +322,20 @@ document.querySelectorAll('.theme-btn').forEach(btn=>{
 })();
 
 /* ---------- core decode ---------- */
+/* Detects which LinkedIn link flavor was pasted, so we can decide up front
+   whether the official embed endpoint is likely to work — we can't detect a
+   failed embed at runtime (cross-origin iframe content is invisible to us),
+   so we pre-filter by known-reliable link types instead. */
+function detectLinkType(input){
+  const trimmed = input.trim();
+  if(/activity[:\-]\d{15,20}/.test(trimmed)) return 'activity';
+  if(/share[:\-]\d{15,20}/.test(trimmed)) return 'share';
+  if(/ugcPost[:\-]\d{15,20}/.test(trimmed)) return 'ugcPost';
+  if(/^\d{15,20}$/.test(trimmed)) return 'raw';
+  return 'unknown';
+}
+const EMBED_SUPPORTED_TYPES = new Set(['activity', 'share', 'raw']);
+
 function extractActivityId(input){
   const trimmed = input.trim();
   if(/^\d{15,20}$/.test(trimmed)) return trimmed;
@@ -746,11 +760,21 @@ function runDecode(){
 
     startLiveAge(decoded.epochMs);
 
-    const embedUrl = `https://www.linkedin.com/embed/feed/update/urn:li:share:${id}`;
-    document.getElementById('embedFrame').src = embedUrl;
-    document.getElementById('embedFallbackLink').href = raw.trim().startsWith('http')
-      ? raw.trim() : `https://www.linkedin.com/feed/update/urn:li:activity:${id}/`;
-    document.getElementById('embedCard').classList.add('show');
+    const linkType = detectLinkType(raw);
+    const embedCard = document.getElementById('embedCard');
+    if(EMBED_SUPPORTED_TYPES.has(linkType)){
+      const embedUrl = `https://www.linkedin.com/embed/feed/update/urn:li:share:${id}`;
+      document.getElementById('embedFrame').src = embedUrl;
+      document.getElementById('embedFallbackLink').href = raw.trim().startsWith('http')
+        ? raw.trim() : `https://www.linkedin.com/feed/update/urn:li:activity:${id}/`;
+      embedCard.classList.add('show');
+    } else {
+      // ugcPost / unrecognized link shapes aren't reliably supported by
+      // LinkedIn's official embed endpoint — skip the box rather than show
+      // a preview we can't verify will actually render.
+      document.getElementById('embedFrame').src = '';
+      embedCard.classList.remove('show');
+    }
 
     const u = BigInt(id);
     const ms = u >> 22n;
