@@ -1,100 +1,176 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>فكّ توقيت لينكد إن</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
-    --ink:#14171c;
-    --panel:#1c2029;
-    --panel-2:#242938;
-    --hairline:#333a4a;
-    --text:#eef0f3;
-    --text-dim:#9aa2b1;
-    --gold:#d4a054;
-    --gold-soft:rgba(212,160,84,.14);
-    --teal:#3fa88a;
-    --danger:#e07856;
+    --bg:#f3f2ef;
+    --panel:#ffffff;
+    --panel-2:#f8f9fa;
+    --hairline:#e0dfdc;
+    --text:#000000e0;
+    --text-dim:#00000099;
+    --blue:#0a66c2;
+    --blue-dark:#004182;
+    --blue-soft:#eaf3fb;
+    --teal:#057642;
+    --danger:#b24020;
+    --shadow:0 1px 2px rgba(0,0,0,.06);
+  }
+  html[data-theme="dark"]{
+    --bg:#1b1f23;
+    --panel:#1d2226;
+    --panel-2:#262c31;
+    --hairline:#38434f;
+    --text:#ffffffe6;
+    --text-dim:#ffffff99;
+    --blue:#70b5f9;
+    --blue-dark:#a6d2ff;
+    --blue-soft:#233240;
+    --teal:#3bc689;
+    --danger:#e58a72;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;background:var(--ink);color:var(--text);
-    font-family:'Segoe UI', Tahoma, Arial, sans-serif;min-height:100vh;}
-  body{padding:40px 20px 80px;}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system, 'Segoe UI', system-ui, Tahoma, Arial, sans-serif;min-height:100vh;
+    transition:background .25s ease, color .25s ease;}
+  body{padding:40px 20px 90px;position:relative;}
   .wrap{max-width:640px;margin:0 auto;}
 
-  header{text-align:center;margin-bottom:28px;}
-  .clock-mark{width:64px;height:64px;margin:0 auto 12px;}
-  .clock-mark svg{width:100%;height:100%;}
-  .tick{stroke:var(--gold);stroke-width:2.2;}
-  .hand{stroke:var(--gold);stroke-width:2.6;stroke-linecap:round;
-    transform-origin:32px 32px;animation:spin 8s linear infinite;}
-  .hand.short{animation-duration:24s;stroke-width:3;}
-  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-  h1{font-size:22px;margin:0 0 6px;}
-  header p{margin:0;color:var(--text-dim);font-size:13.5px;line-height:1.7;}
+  /* theme switcher */
+  .theme-switcher{display:flex;justify-content:center;gap:6px;margin-bottom:18px;}
+  .theme-btn{background:var(--panel);border:1px solid var(--hairline);color:var(--text-dim);
+    border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;gap:5px;transition:.15s;}
+  .theme-btn:hover{color:var(--text);border-color:var(--blue);}
+  .theme-btn.active{background:var(--blue-soft);color:var(--blue-dark);border-color:var(--blue);
+    font-weight:700;}
+
+  header{text-align:center;margin:6px 0 24px;}
+  .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;}
+  .logo-chip{width:38px;height:38px;background:var(--blue);border-radius:6px;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;
+    font-family:Georgia,serif;}
+  html[data-theme="dark"] .logo-chip{color:#1b1f23;}
+  h1{font-size:24px;margin:0 0 8px;font-weight:700;letter-spacing:-.2px;}
+  h1 span{color:var(--blue);}
+  header p{margin:0;color:var(--text-dim);font-size:13.5px;line-height:1.8;max-width:480px;
+    margin:0 auto;}
 
   .card{background:var(--panel);border:1px solid var(--hairline);border-radius:12px;
-    padding:24px;margin-bottom:18px;}
+    padding:26px;margin-bottom:18px;box-shadow:var(--shadow);}
+  .card h2{font-size:16px;margin:0 0 14px;font-weight:700;}
 
-  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:8px;}
-  input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--hairline);
-    border-radius:8px;color:var(--text);font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:7px;}
+  input[type=text]{width:100%;background:var(--panel);border:1px solid var(--hairline);
+    border-radius:6px;color:var(--text);font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size:13px;padding:12px 14px;direction:ltr;text-align:left;}
-  input[type=text]:focus{outline:none;border-color:var(--gold);}
+  input[type=text]:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
 
-  .tz-row{display:flex;align-items:center;gap:10px;margin-top:14px;}
+  .tz-row{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .tz-row label{margin:0;white-space:nowrap;}
-  select{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;
+  select{background:var(--panel);border:1px solid var(--hairline);border-radius:6px;
     color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;}
+  .tz-auto{font-size:11px;color:var(--teal);margin-inline-start:auto;}
 
-  .btn{background:var(--gold);color:#1a1305;border:none;border-radius:8px;padding:11px 22px;
-    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;width:100%;}
-  .btn:hover{filter:brightness(1.08);}
+  .btn{background:var(--blue);color:#fff;border:none;border-radius:24px;padding:11px 22px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;width:100%;
+    transition:filter .15s;}
+  html[data-theme="dark"] .btn{color:#0b1520;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.ghost{background:none;border:1.5px solid var(--blue);color:var(--blue);
+    width:auto;margin-top:0;padding:8px 18px;font-size:13px;border-radius:20px;}
+  .btn.ghost:hover{background:var(--blue-soft);}
 
   .msg{font-size:13px;margin-top:12px;padding:9px 12px;border-radius:7px;display:none;}
-  .msg.err{display:block;background:rgba(224,120,86,.12);color:var(--danger);border:1px solid rgba(224,120,86,.3);}
+  .msg.err{display:block;background:#fdf1ee;color:var(--danger);border:1px solid #f3d4c8;}
+  html[data-theme="dark"] .msg.err{background:#3a241c;border-color:#54372a;}
 
-  .result{display:none;margin-top:20px;}
-  .result.show{display:block;animation:fade .25s ease;}
-  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  .scramble{font-family:ui-monospace,monospace;font-size:12px;color:var(--blue);
+    text-align:center;margin-top:14px;display:none;letter-spacing:3px;direction:ltr;}
+
+  .result{display:none;margin-top:18px;}
+  .result.show{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .flavor-badge{display:inline-block;background:var(--blue-soft);color:var(--blue-dark);
+    padding:5px 14px;border-radius:20px;font-size:12.5px;font-weight:700;margin-bottom:14px;}
+
   .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .result-item{background:var(--panel-2);border:1px solid var(--hairline);border-radius:8px;padding:14px 16px;}
-  .result-item .lbl{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-  .result-item .val{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:17px;color:var(--gold);}
+  .result-item .lbl{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .result-item .val{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:17px;color:var(--blue-dark);}
   .result-item.wide{grid-column:1 / -1;}
-  .urn-echo{font-size:11.5px;color:var(--text-dim);margin-top:14px;direction:ltr;text-align:left;word-break:break-all;}
+  .live-age{font-variant-numeric:tabular-nums;}
+
+  .result-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+
+  #shareCard{background:var(--panel);border:1px solid var(--hairline);border-radius:12px;
+    padding:24px;margin-top:14px;}
+  #shareCard .brand{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px;}
+
+  details{margin-top:16px;border-top:1px solid var(--hairline);padding-top:14px;}
+  summary{cursor:pointer;font-size:12.5px;color:var(--text-dim);user-select:none;}
+  summary:hover{color:var(--text);}
+  .tech-steps{font-family:ui-monospace,monospace;font-size:11.5px;line-height:2;color:var(--text-dim);
+    direction:ltr;text-align:left;margin-top:10px;word-break:break-all;}
+  .tech-steps b{color:var(--blue-dark);}
+
+  .compare-toggle{font-size:12.5px;color:var(--blue);cursor:pointer;text-align:center;
+    margin-top:10px;user-select:none;font-weight:600;}
+  .compare-toggle:hover{text-decoration:underline;}
+  #compareBox{display:none;margin-top:14px;}
+  .compare-result{background:var(--panel-2);border-radius:8px;padding:14px;margin-top:12px;
+    font-size:13.5px;line-height:1.9;text-align:center;}
+  .compare-result b{color:var(--blue-dark);}
+
+  .history-list{margin-top:10px;}
+  .history-item{display:flex;justify-content:space-between;align-items:center;
+    padding:8px 10px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text-dim);}
+  .history-item:hover{background:var(--blue-soft);color:var(--text);}
+  .history-item .h-date{font-family:ui-monospace,monospace;color:var(--blue-dark);}
 
   .note{font-size:12px;color:var(--text-dim);line-height:1.8;margin-top:4px;}
-  footer{text-align:center;font-size:11.5px;color:var(--text-dim);margin-top:10px;}
+
+  .email-card{text-align:center;}
+  .email-row{display:flex;gap:8px;margin-top:12px;}
+  .email-row input{flex:1;}
+  .email-row button{width:auto;margin-top:0;padding:11px 18px;white-space:nowrap;}
+  .email-ok{color:var(--teal);font-size:12.5px;margin-top:10px;display:none;}
+
+  .disclaimer{font-size:11px;color:var(--text-dim);text-align:center;line-height:1.8;
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--hairline);}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="theme-switcher">
+    <button class="theme-btn" data-theme-choice="light">☀️ فاتح</button>
+    <button class="theme-btn" data-theme-choice="dark">🌙 غامق</button>
+    <button class="theme-btn" data-theme-choice="auto">🕐 تلقائي</button>
+  </div>
+
   <header>
-    <div class="clock-mark">
-      <svg viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="29" fill="none" stroke="#333a4a" stroke-width="2"/>
-        <line class="tick" x1="32" y1="6" x2="32" y2="11"/>
-        <line class="tick" x1="32" y1="53" x2="32" y2="58"/>
-        <line class="tick" x1="6" y1="32" x2="11" y2="32"/>
-        <line class="tick" x1="53" y1="32" x2="58" y2="32"/>
-        <line class="hand" x1="32" y1="32" x2="32" y2="14"/>
-        <line class="hand short" x1="32" y1="32" x2="20" y2="32"/>
-      </svg>
+    <div class="logo-row">
+      <div class="logo-chip">in</div>
     </div>
-    <h1>فكّ توقيت لينكد إن</h1>
-    <p>الصق رابط أي منشور على لينكد إن، واحصل على تاريخه ووقته الدقيقين — بدون تسجيل دخول، وبدون أي اتصال بلينكد إن. كل الحساب يتم داخل متصفحك مباشرة.</p>
+    <h1>فكّ توقيت <span>لينكد إن</span></h1>
+    <p>لينكد إن ما بيوريك متى نُشر المنشور بالضبط — بس فيه طريقة تفكّها. الصق أي رابط منشور، وشوف اللحظة الحقيقية.</p>
   </header>
 
   <div class="card">
+    <h2>فكّ منشور</h2>
     <label for="urlInput">رابط المنشور</label>
     <input type="text" id="urlInput" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:.../">
 
     <div class="tz-row">
       <label for="tzSelect">المنطقة الزمنية:</label>
       <select id="tzSelect">
-        <option value="3" selected>الرياض / بيروت (+3 GMT)</option>
+        <option value="3">الرياض / بيروت (+3 GMT)</option>
         <option value="0">غرينتش (UTC+0)</option>
         <option value="1">وسط أوروبا (+1 GMT)</option>
         <option value="2">القاهرة / عمّان (+2 GMT)</option>
@@ -102,33 +178,105 @@
         <option value="-5">نيويورك (-5 GMT)</option>
         <option value="-8">لوس أنجلوس (-8 GMT)</option>
       </select>
+      <span class="tz-auto" id="tzAuto"></span>
     </div>
 
     <button class="btn" id="decodeBtn">فكّ التوقيت</button>
+    <div class="scramble" id="scrambleLine"></div>
     <div class="msg" id="errMsg"></div>
 
     <div class="result" id="resultBox">
+      <div class="flavor-badge" id="flavorBadge"></div>
       <div class="result-grid">
         <div class="result-item"><div class="lbl">التاريخ</div><div class="val" id="rDate">—</div></div>
         <div class="result-item"><div class="lbl">اليوم</div><div class="val" id="rDay">—</div></div>
         <div class="result-item"><div class="lbl">الوقت</div><div class="val" id="rTime">—</div></div>
         <div class="result-item"><div class="lbl">بالعامية</div><div class="val" id="rHour">—</div></div>
-        <div class="result-item wide"><div class="lbl">منذ النشر</div><div class="val" id="rAgo">—</div></div>
+        <div class="result-item wide"><div class="lbl">عمر المنشور (حي)</div><div class="val live-age" id="rAgeLive">—</div></div>
       </div>
-      <div class="urn-echo" id="urnEcho"></div>
+
+      <div class="result-actions">
+        <button class="btn ghost" id="copyLinkBtn">انسخ رابط النتيجة 🔗</button>
+        <button class="btn ghost" id="exportImgBtn">صدّرها كصورة 🖼️</button>
+      </div>
+
+      <details>
+        <summary>تفاصيل تقنية — كيف انفكّ الرقم؟</summary>
+        <div class="tech-steps" id="techSteps"></div>
+      </details>
     </div>
+
+    <div class="compare-toggle" id="compareToggle">+ قارن بين منشورين</div>
+    <div id="compareBox">
+      <label for="urlInput2" style="margin-top:10px;">رابط منشور ثانٍ</label>
+      <input type="text" id="urlInput2" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:.../">
+      <button class="btn" id="compareBtn">قارن</button>
+      <div class="compare-result" id="compareResult" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none;">
+    <h2>آخر ما فكّيته</h2>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- shareable export card (hidden template, shown when exporting) -->
+  <div id="shareCard" style="display:none;">
+    <div class="brand">in — فكّ توقيت لينكد إن</div>
+    <div class="result-grid" id="shareGrid"></div>
+  </div>
+
+  <div class="card email-card">
+    <h2>تحب تعرف لما نضيف ميزات جديدة؟</h2>
+    <p class="note" style="margin-bottom:0;">اختياري تمامًا — بنستخدمه فقط لإشعارك بالتحديثات.</p>
+    <div class="email-row">
+      <input type="text" id="emailInput" placeholder="you@example.com">
+      <button class="btn ghost" id="emailBtn">أبقيني على اطلاع</button>
+    </div>
+    <div class="email-ok" id="emailOk">تم! شكرًا 🙌</div>
   </div>
 
   <p class="note">
     ⚠️ هذه الطريقة مبنية على ملاحظة عملية لتنسيق معرّفات لينكد إن (Snowflake ID)، وليست موثّقة رسميًا من الشركة — قد تتغير دقتها إذا غيّر لينكد إن آلية توليد المعرّفات مستقبلاً.
   </p>
-  <footer>يعمل بالكامل داخل متصفحك — لا يُرسل أي رابط أو بيانات لأي خادم.</footer>
+  <div class="disclaimer">
+    أداة مستقلة غير رسمية وغير تابعة لشركة LinkedIn أو مرتبطة بها بأي شكل. يعمل بالكامل داخل متصفحك — لا يُرسل أي رابط أو محتوى منشور لأي خادم.
+    <span id="visitCount"></span>
+  </div>
 </div>
 
 <script>
+/* ---------- theme switcher (light / dark / auto-by-local-time) ---------- */
+function effectiveThemeForAuto(){
+  const hour = new Date().getHours();
+  return (hour >= 6 && hour < 18) ? 'light' : 'dark';
+}
+function applyTheme(choice){
+  const actual = choice === 'auto' ? effectiveThemeForAuto() : choice;
+  document.documentElement.setAttribute('data-theme', actual);
+  document.querySelectorAll('.theme-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.themeChoice === choice);
+  });
+}
+function setThemeChoice(choice){
+  localStorage.setItem('lidecoder_theme', choice);
+  applyTheme(choice);
+}
+document.querySelectorAll('.theme-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> setThemeChoice(btn.dataset.themeChoice));
+});
+(function initTheme(){
+  const saved = localStorage.getItem('lidecoder_theme') || 'auto';
+  applyTheme(saved);
+  // re-evaluate every 5 minutes so "auto" flips naturally if the page stays open across dawn/dusk
+  setInterval(()=>{
+    if((localStorage.getItem('lidecoder_theme')||'auto') === 'auto') applyTheme('auto');
+  }, 5*60*1000);
+})();
+
+/* ---------- core decode ---------- */
 function extractActivityId(input){
   const trimmed = input.trim();
-  // direct numeric ID pasted
   if(/^\d{15,20}$/.test(trimmed)) return trimmed;
   const m = trimmed.match(/activity[:\-](\d{15,20})/);
   return m ? m[1] : null;
@@ -149,26 +297,92 @@ function decode(urnStr, tzOffsetHours){
   let hour12 = hh % 12; if(hour12 === 0) hour12 = 12;
   const period = hh < 12 ? 'صباحًا' : 'مساءً';
   return {
-    date: `${y}-${mo}-${da}`,
-    day_of_week: dow,
+    date: `${y}-${mo}-${da}`, day_of_week: dow,
     time: `${String(hh).padStart(2,'0')}:${mm}`,
     hour_label: `${hour12} ${period}`,
-    epochMs: Number(ms)
+    epochMs: Number(ms), rawHour: hh
   };
 }
 
-function timeAgo(publishEpochMs){
-  const diffMs = Date.now() - publishEpochMs;
-  const days = Math.floor(diffMs / 86400000);
-  if(days < 1) return 'اليوم';
-  if(days < 30) return `منذ ${days} يوم`;
-  const months = Math.floor(days/30);
-  if(months < 12) return `منذ ${months} شهر`;
-  const years = Math.floor(months/12);
-  return `منذ ${years} سنة${months%12 ? ' و' + (months%12) + ' شهر' : ''}`;
+function flavorFor(hh, dow){
+  if(hh >= 0 && hh < 5) return '🦉 نُشر في قلب الليل';
+  if(hh >= 5 && hh < 8) return '☀️ نُشر مع أول الفجر';
+  if(dow === 'الجمعة') return '🕌 نُشر يوم الجمعة';
+  if(dow === 'السبت' || dow === 'الأحد') return '🏖️ نُشر بعطلة نهاية الأسبوع';
+  if(hh >= 12 && hh < 14) return '🍽️ نُشر وقت الغداء';
+  return '📌 نُشر بوقت دوام عادي';
 }
 
-document.getElementById('decodeBtn').addEventListener('click', ()=>{
+let liveTimer = null;
+function formatAge(diffMs){
+  let s = Math.floor(diffMs/1000);
+  const days = Math.floor(s/86400); s -= days*86400;
+  const hours = Math.floor(s/3600); s -= hours*3600;
+  const mins = Math.floor(s/60); s -= mins*60;
+  return `${days} يوم، ${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function startLiveAge(epochMs){
+  if(liveTimer) clearInterval(liveTimer);
+  const tick = ()=>{ document.getElementById('rAgeLive').textContent = formatAge(Date.now()-epochMs); };
+  tick();
+  liveTimer = setInterval(tick, 1000);
+}
+
+/* ---------- history (localStorage) ---------- */
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem('lidecoder_history')||'[]'); }catch(e){ return []; }
+}
+function saveHistory(entry){
+  let h = loadHistory();
+  h = h.filter(x=>x.id !== entry.id);
+  h.unshift(entry);
+  h = h.slice(0,5);
+  localStorage.setItem('lidecoder_history', JSON.stringify(h));
+  renderHistory();
+}
+function renderHistory(){
+  const h = loadHistory();
+  const card = document.getElementById('historyCard');
+  const list = document.getElementById('historyList');
+  if(!h.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = h.map(x=>`
+    <div class="history-item" data-id="${x.id}" data-tz="${x.tz}">
+      <span>${x.date} · ${x.day}</span>
+      <span class="h-date">${x.time}</span>
+    </div>`).join('');
+  list.querySelectorAll('.history-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      document.getElementById('urlInput').value = item.dataset.id;
+      document.getElementById('tzSelect').value = item.dataset.tz;
+      runDecode();
+    });
+  });
+}
+
+/* ---------- scramble reveal animation ---------- */
+function scrambleThenReveal(finalText, cb){
+  const el = document.getElementById('scrambleLine');
+  el.style.display = 'block';
+  const chars = '01';
+  let ticks = 0;
+  const maxTicks = 10;
+  const iv = setInterval(()=>{
+    let out = '';
+    for(let i=0;i<28;i++) out += chars[Math.floor(Math.random()*2)];
+    el.textContent = out;
+    ticks++;
+    if(ticks >= maxTicks){
+      clearInterval(iv);
+      el.style.display = 'none';
+      cb();
+    }
+  }, 45);
+}
+
+/* ---------- main decode flow ---------- */
+function runDecode(){
   const raw = document.getElementById('urlInput').value;
   const errMsg = document.getElementById('errMsg');
   const resultBox = document.getElementById('resultBox');
@@ -177,32 +391,152 @@ document.getElementById('decodeBtn').addEventListener('click', ()=>{
 
   const id = extractActivityId(raw);
   if(!id){
-    errMsg.textContent = 'تعذّر إيجاد معرّف منشور صالح داخل هذا الرابط. تأكد أنه رابط منشور لينكد إن كامل.';
+    errMsg.textContent = 'تعذّر إيجاد معرّف منشور صالح داخل هذا الرابط.';
     errMsg.classList.add('err');
     return;
   }
-
   const tz = parseFloat(document.getElementById('tzSelect').value);
   let decoded;
-  try{
-    decoded = decode(id, tz);
-  }catch(e){
+  try{ decoded = decode(id, tz); }
+  catch(e){
     errMsg.textContent = 'حدث خطأ أثناء فك التوقيت. تأكد من صحة الرابط.';
     errMsg.classList.add('err');
     return;
   }
 
-  document.getElementById('rDate').textContent = decoded.date;
-  document.getElementById('rDay').textContent = decoded.day_of_week;
-  document.getElementById('rTime').textContent = decoded.time;
-  document.getElementById('rHour').textContent = decoded.hour_label;
-  document.getElementById('rAgo').textContent = timeAgo(decoded.epochMs);
-  document.getElementById('urnEcho').textContent = `activity ID: ${id}`;
-  resultBox.classList.add('show');
+  scrambleThenReveal(decoded.date, ()=>{
+    document.getElementById('flavorBadge').textContent = flavorFor(decoded.rawHour, decoded.day_of_week);
+    document.getElementById('rDate').textContent = decoded.date;
+    document.getElementById('rDay').textContent = decoded.day_of_week;
+    document.getElementById('rTime').textContent = decoded.time;
+    document.getElementById('rHour').textContent = decoded.hour_label;
+    startLiveAge(decoded.epochMs);
+
+    const u = BigInt(id);
+    const ms = u >> 22n;
+    document.getElementById('techSteps').innerHTML =
+      `activity ID (raw): <b>${id}</b><br>`+
+      `>> 22 bits (Snowflake shift): <b>${ms.toString()}</b> ms<br>`+
+      `= epoch time: <b>${new Date(Number(ms)).toISOString()}</b><br>`+
+      `+ ${tz}h timezone offset applied`;
+
+    resultBox.classList.add('show');
+    saveHistory({id, tz, date: decoded.date, day: decoded.day_of_week, time: decoded.time});
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('u', id); params.set('tz', tz);
+    window.history.replaceState({}, '', '?' + params.toString());
+  });
+}
+
+document.getElementById('decodeBtn').addEventListener('click', runDecode);
+document.getElementById('urlInput').addEventListener('keydown', e=>{ if(e.key==='Enter') runDecode(); });
+
+/* ---------- copy shareable link ---------- */
+document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(window.location.href).then(()=>{
+    const btn = document.getElementById('copyLinkBtn');
+    const old = btn.textContent;
+    btn.textContent = 'تم النسخ ✓';
+    setTimeout(()=>btn.textContent = old, 1600);
+  });
 });
 
-document.getElementById('urlInput').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') document.getElementById('decodeBtn').click();
+/* ---------- export result as image (matches current theme) ---------- */
+document.getElementById('exportImgBtn').addEventListener('click', ()=>{
+  const shareCard = document.getElementById('shareCard');
+  document.getElementById('shareGrid').innerHTML = document.getElementById('resultBox')
+    .querySelector('.result-grid').innerHTML;
+  shareCard.style.display = 'block';
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  html2canvas(shareCard, {backgroundColor: isDark ? '#1d2226' : '#ffffff'}).then(canvas=>{
+    shareCard.style.display = 'none';
+    const link = document.createElement('a');
+    link.download = 'linkedin-post-time.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+});
+
+/* ---------- compare mode ---------- */
+document.getElementById('compareToggle').addEventListener('click', ()=>{
+  const box = document.getElementById('compareBox');
+  const isOpen = box.style.display === 'block';
+  box.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('compareToggle').textContent = isOpen ? '+ قارن بين منشورين' : '- إخفاء المقارنة';
+});
+document.getElementById('compareBtn').addEventListener('click', ()=>{
+  const id1 = extractActivityId(document.getElementById('urlInput').value);
+  const id2 = extractActivityId(document.getElementById('urlInput2').value);
+  const box = document.getElementById('compareResult');
+  if(!id1 || !id2){
+    box.style.display='block';
+    box.innerHTML = 'تأكد من إدخال رابطين صالحين (الأول بالحقل الرئيسي، والثاني أدناه).';
+    return;
+  }
+  const tz = parseFloat(document.getElementById('tzSelect').value);
+  const d1 = decode(id1, tz), d2 = decode(id2, tz);
+  const diffMs = Math.abs(d1.epochMs - d2.epochMs);
+  const earlier = d1.epochMs < d2.epochMs ? 'الأول' : 'الثاني';
+  box.style.display = 'block';
+  box.innerHTML = `المنشور <b>${earlier}</b> نُشر أولًا، بفارق <b>${formatAge(diffMs)}</b> عن الآخر.`;
+});
+
+/* ---------- timezone auto-detect ---------- */
+(function(){
+  const offsetHours = -new Date().getTimezoneOffset()/60;
+  const select = document.getElementById('tzSelect');
+  let matched = false;
+  for(const opt of select.options){
+    if(parseFloat(opt.value) === offsetHours){ opt.selected = true; matched = true; break; }
+  }
+  document.getElementById('tzAuto').textContent = matched ? '✓ اكتُشفت تلقائيًا' : '';
+  if(!matched) select.value = '3';
+})();
+
+/* ---------- load history + shared link on page load ---------- */
+renderHistory();
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const u = params.get('u'), tz = params.get('tz');
+  if(u){
+    document.getElementById('urlInput').value = u;
+    if(tz) document.getElementById('tzSelect').value = tz;
+    runDecode();
+  }
+})();
+
+/* ---------- anonymous visit counter ----------
+   Replace YOUR-NAMESPACE below with a unique name you choose (free, no signup needed)
+   via https://counterapi.dev — this just tracks a total count, no personal data. */
+(function(){
+  fetch('https://api.counterapi.dev/v1/YOUR-NAMESPACE/li-time-decoder/up')
+    .then(r=>r.json())
+    .then(data=>{
+      document.getElementById('visitCount').textContent = ' · تم استخدامها ' + (data.count||'?') + ' مرة';
+    })
+    .catch(()=>{ /* silently ignore if counter service unreachable */ });
+})();
+
+/* ---------- optional email capture ----------
+   Replace YOUR-FORM-ID below with your own Formspree form ID (free at formspree.io) */
+document.getElementById('emailBtn').addEventListener('click', ()=>{
+  const email = document.getElementById('emailInput').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    alert('الرجاء إدخال بريد إلكتروني صحيح.');
+    return;
+  }
+  fetch('https://formspree.io/f/YOUR-FORM-ID', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body: JSON.stringify({email})
+  }).then(()=>{
+    document.getElementById('emailOk').style.display = 'block';
+    document.getElementById('emailInput').value = '';
+  }).catch(()=>{
+    document.getElementById('emailOk').style.display = 'block';
+    document.getElementById('emailOk').textContent = 'تعذّر الإرسال الآن، حاول لاحقًا.';
+  });
 });
 </script>
 </body>
